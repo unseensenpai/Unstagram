@@ -30,12 +30,10 @@ do
 AnsiConsole.Write(new FigletText("*-Processing-*"));
 for (int i = 1; i <= 10; i++)
 {
-    Console.WriteLine($"%{i*10}");
+    Console.WriteLine($"%{i * 10}");
     Thread.Sleep(100);
 }
 AnsiConsole.Write(new FigletText("Done"));
 Console.WriteLine("Press any button to exit.");
 Console.ReadKey();
 Environment.Exit(0);
-
-
