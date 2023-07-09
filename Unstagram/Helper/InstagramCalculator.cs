@@ -11,61 +11,73 @@ namespace Unstagram.Helper
 {
     public class InstagramCalculator
     {
-        public static void GenerateInformation(string? followingFileName, string? followerFileName)
+        public static bool GenerateInformation(string? followingFileName, string? followerFileName)
         {
-            if (!string.IsNullOrEmpty(followingFileName) && !string.IsNullOrEmpty(followerFileName))
+            try
             {
-                try
+                if (!string.IsNullOrEmpty(followingFileName) && !string.IsNullOrEmpty(followerFileName))
                 {
-                    string followingJson = File.ReadAllText($"{AppDomain.CurrentDomain.BaseDirectory}{followingFileName}.json");
-                    string followerJson = File.ReadAllText($"{AppDomain.CurrentDomain.BaseDirectory}{followerFileName}.json");
-                    List<InstagramFollowersModel>? followerModel = JsonConvert.DeserializeObject<List<InstagramFollowersModel>>(followerJson);
-                    InstagramFollowingModel? followingModel = JsonConvert.DeserializeObject<InstagramFollowingModel>(followingJson);
-                    if (followerModel is not null && followingModel is not null)
+                    try
                     {
-                        List<string> stringListFollower = followerModel.SelectMany(x => x.String_List_Data).Select(x => x.Href).ToList();
-                        IEnumerable<string> stringListFollowing = followingModel.Relationships_Following.SelectMany(x => x.String_List_Data).Select(x => x.Href);
-                        List<string> imNotFollowingList = stringListFollower.Except(stringListFollowing).ToList();
-                        List<string> theyAreNotFollowingList = stringListFollowing.Except(stringListFollower).ToList();
-                        string imNotFollowingTextPath = $"{AppDomain.CurrentDomain.BaseDirectory}/Results/YouAreNotFollowingThisAccounts.txt";
-                        string theyAreNotFollowingTextPath = $"{AppDomain.CurrentDomain.BaseDirectory}/Results/TheseAreNotFollowingYou.txt";
-                        string directoryPath = $"{AppDomain.CurrentDomain.BaseDirectory}/Results/";
-                        if (!Directory.Exists(directoryPath))
+                        string followingJson = File.ReadAllText($"{AppDomain.CurrentDomain.BaseDirectory}{followingFileName}.json");
+                        string followerJson = File.ReadAllText($"{AppDomain.CurrentDomain.BaseDirectory}{followerFileName}.json");
+                        List<InstagramFollowersModel>? followerModel = JsonConvert.DeserializeObject<List<InstagramFollowersModel>>(followerJson);
+                        InstagramFollowingModel? followingModel = JsonConvert.DeserializeObject<InstagramFollowingModel>(followingJson);
+                        if (followerModel is not null && followingModel is not null)
                         {
-                            Directory.CreateDirectory(directoryPath);
-                        }
-
-                        using (FileStream fileStream = File.Create(imNotFollowingTextPath))
-                        {
-                            foreach (string? imNot in imNotFollowingList)
+                            List<string> stringListFollower = followerModel.SelectMany(x => x.String_List_Data).Select(x => x.Href).ToList();
+                            IEnumerable<string> stringListFollowing = followingModel.Relationships_Following.SelectMany(x => x.String_List_Data).Select(x => x.Href);
+                            List<string> imNotFollowingList = stringListFollower.Except(stringListFollowing).ToList();
+                            List<string> theyAreNotFollowingList = stringListFollowing.Except(stringListFollower).ToList();
+                            string imNotFollowingTextPath = $"{AppDomain.CurrentDomain.BaseDirectory}/Results/YouAreNotFollowingThese.txt";
+                            string theyAreNotFollowingTextPath = $"{AppDomain.CurrentDomain.BaseDirectory}/Results/TheseAreNotFollowingYou.txt";
+                            string directoryPath = $"{AppDomain.CurrentDomain.BaseDirectory}/Results/";
+                            if (!Directory.Exists(directoryPath))
                             {
-                                fileStream.Write(Encoding.UTF8.GetBytes(imNot.Replace("https://www.instagram.com/", "") + " \n"));
+                                Directory.CreateDirectory(directoryPath);
                             }
-                        }
 
-                        using (FileStream fileStream = File.Create(theyAreNotFollowingTextPath))
-                        {
-
-                            foreach (string? theyAreNot in theyAreNotFollowingList)
+                            using (FileStream fileStream = File.Create(imNotFollowingTextPath))
                             {
-                                fileStream.Write(Encoding.UTF8.GetBytes(theyAreNot.Replace("https://www.instagram.com/", "") + " \n"));
+                                foreach (string? imNot in imNotFollowingList)
+                                {
+                                    fileStream.Write(Encoding.UTF8.GetBytes(imNot.Replace("https://www.instagram.com/", "") + " \n"));
+                                }
                             }
+
+                            using (FileStream fileStream = File.Create(theyAreNotFollowingTextPath))
+                            {
+
+                                foreach (string? theyAreNot in theyAreNotFollowingList)
+                                {
+                                    fileStream.Write(Encoding.UTF8.GetBytes(theyAreNot.Replace("https://www.instagram.com/", "") + " \n"));
+                                }
+                            }
+                            return true;
+                        }
+                        else
+                        {
+                            throw new ArgumentNullException("Models are null. Please check for valid json.");
                         }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        throw new ArgumentNullException("Models are null. Please check for valid json.");
+                        Console.WriteLine($"An error occured while generating results. ERROR: {ex.Message}", ex);
+                        return false;
                     }
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine($"An error occured while generating results. ERROR: {ex.Message}", ex);
+                    Console.WriteLine("File names cannot be find in root folder. Copy them to root folder.");
+                    return false;
                 }
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine("File names cannot be find in root folder. Copy them to root folder.");
+                Console.WriteLine($"An error occured while generating result files. {ex.Message}");
+                return false;
             }
+            
         }
     }
 }
