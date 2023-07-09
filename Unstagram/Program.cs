@@ -14,33 +14,7 @@ Console.WriteLine("Step 3: Press Enter key to start process.");
 
 ReadAndGenerateResults(configuration);
 
-Console.WriteLine("Do you want to open result files? (Y/N)");
-var key = Console.ReadLine();
-key = !string.IsNullOrWhiteSpace(key) ? key.ToLower() : string.Empty;
-if (key.Equals("y"))
-{
-    var path = $"{AppDomain.CurrentDomain.BaseDirectory}Results";
-    if (Directory.Exists(path))
-    {
-        Process.Start(new ProcessStartInfo()
-        {
-            FileName = "explorer.exe",
-            Arguments = path
-        });
-        Environment.Exit(0);
-    }
-    else
-    {
-        Console.WriteLine("Directory could not found.");
-        Environment.Exit(0);
-    } 
-}
-else
-{
-    Console.WriteLine("Press any button to exit.");
-    Console.ReadKey();
-    Environment.Exit(0);
-}
+
 
 static void ReadAndGenerateResults(IConfigurationRoot configuration)
 {
@@ -62,10 +36,14 @@ static void ReadAndGenerateResults(IConfigurationRoot configuration)
                     Thread.Sleep(100);
                 }
                 AnsiConsole.Write(new FigletText("*-Done-*"));
+                DoExitProcess();
             }
             else
             {
                 AnsiConsole.Write(new FigletText("*-Error-*"));
+                Console.WriteLine("Press any button to exit.");
+                Console.ReadKey();
+                Environment.Exit(0);
             }
             break;
         }
@@ -75,4 +53,35 @@ static void ReadAndGenerateResults(IConfigurationRoot configuration)
         }
         ;
     } while (true);
+}
+
+static void DoExitProcess()
+{
+    Console.WriteLine("Do you want to open result files? (Y/N)");
+    var key = Console.ReadLine();
+    key = !string.IsNullOrWhiteSpace(key) ? key.ToLower() : string.Empty;
+    if (key.Equals("y"))
+    {
+        var path = $"{AppDomain.CurrentDomain.BaseDirectory}Results";
+        if (Directory.Exists(path))
+        {
+            Process.Start(new ProcessStartInfo()
+            {
+                FileName = "explorer.exe",
+                Arguments = path
+            });
+            Environment.Exit(0);
+        }
+        else
+        {
+            Console.WriteLine("Directory could not found.");
+            Environment.Exit(0);
+        }
+    }
+    else
+    {
+        Console.WriteLine("Press any button to exit.");
+        Console.ReadKey();
+        Environment.Exit(0);
+    }
 }
