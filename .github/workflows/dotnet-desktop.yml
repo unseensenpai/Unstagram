@@ -18,8 +18,19 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
+      # Add DevExpress private NuGet source using your license key (stored as a secret)
+      - name: Add DevExpress NuGet feed
+        run: |
+          dotnet nuget remove source DevExpress || true
+          dotnet nuget add source "https://nuget.devexpress.com/${{ secrets.DEVEXPRESS_NUGET_KEY }}/api/v3/index.json" `
+            --name DevExpress `
+            --username dx `
+            --password ${{ secrets.DEVEXPRESS_NUGET_KEY }} `
+            --store-password-in-clear-text
+
+      # Optional: restore only the WinForms project to avoid restoring net7.0 projects
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore src/Unstagram.WinFormApp/Unstagram.WinFormApp.csproj
 
       - name: Publish win-x64 (self-contained single-file)
         run: >
