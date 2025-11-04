@@ -3,7 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33627.172
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unstagram", "Unstagram\Unstagram.csproj", "{41859DEE-3428-4E31-9618-FFD5234C17D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unstagram.ConsoleApp", "src\Unstagram.ConsoleApp\Unstagram.ConsoleApp.csproj", "{41859DEE-3428-4E31-9618-FFD5234C17D6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{ADB1D1F9-809F-4A89-9729-27E6104A5E14}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unstagram.WinFormApp", "src\Unstagram.WinFormApp\Unstagram.WinFormApp.csproj", "{DC10194D-38CA-4CD6-9341-47B206225CA6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,9 +21,17 @@ Global
 		{41859DEE-3428-4E31-9618-FFD5234C17D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{41859DEE-3428-4E31-9618-FFD5234C17D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{41859DEE-3428-4E31-9618-FFD5234C17D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC10194D-38CA-4CD6-9341-47B206225CA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC10194D-38CA-4CD6-9341-47B206225CA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC10194D-38CA-4CD6-9341-47B206225CA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC10194D-38CA-4CD6-9341-47B206225CA6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{41859DEE-3428-4E31-9618-FFD5234C17D6} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{DC10194D-38CA-4CD6-9341-47B206225CA6} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1DDA866E-80DA-4046-A720-242C552C8164}
