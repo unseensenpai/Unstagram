@@ -243,6 +243,8 @@
             GV_Followers.Name = "GV_Followers";
             GV_Followers.DoubleClick += GV_DoubleClick;
             GV_Followers.KeyDown += GV_KeyDown;
+            GV_Followers.OptionsBehavior.Editable = false;
+            GV_Followers.OptionsBehavior.ReadOnly = true;
             // 
             // XTP_Following
             // 
@@ -267,6 +269,8 @@
             GV_Following.Name = "GV_Following";
             GV_Following.DoubleClick += GV_DoubleClick;
             GV_Following.KeyDown += GV_KeyDown;
+            GV_Following.OptionsBehavior.Editable = false;
+            GV_Following.OptionsBehavior.ReadOnly = true;
             // 
             // XTP_RecentlyUnfollowed
             // 
@@ -291,6 +295,8 @@
             GV_RecentlyUnfollowed.Name = "GV_RecentlyUnfollowed";
             GV_RecentlyUnfollowed.DoubleClick += GV_DoubleClick;
             GV_RecentlyUnfollowed.KeyDown += GV_KeyDown;
+            GV_RecentlyUnfollowed.OptionsBehavior.Editable = false;
+            GV_RecentlyUnfollowed.OptionsBehavior.ReadOnly = true;
             // 
             // XTP_FollowRequestYouHaveReceived
             // 
@@ -315,6 +321,8 @@
             GV_FollowRequestsYouHaveRecieved.Name = "GV_FollowRequestsYouHaveRecieved";
             GV_FollowRequestsYouHaveRecieved.DoubleClick += GV_DoubleClick;
             GV_FollowRequestsYouHaveRecieved.KeyDown += GV_KeyDown;
+            GV_FollowRequestsYouHaveRecieved.OptionsBehavior.Editable = false;
+            GV_FollowRequestsYouHaveRecieved.OptionsBehavior.ReadOnly = true;
             // 
             // XTP_CloseFriends
             // 
@@ -339,6 +347,8 @@
             GV_CloseFriends.Name = "GV_CloseFriends";
             GV_CloseFriends.DoubleClick += GV_DoubleClick;
             GV_CloseFriends.KeyDown += GV_KeyDown;
+            GV_CloseFriends.OptionsBehavior.Editable = false;
+            GV_CloseFriends.OptionsBehavior.ReadOnly = true;
             // 
             // XTP_HideStoryFrom
             // 
@@ -363,6 +373,8 @@
             GV_HideStoryFrom.Name = "GV_HideStoryFrom";
             GV_HideStoryFrom.DoubleClick += GV_DoubleClick;
             GV_HideStoryFrom.KeyDown += GV_KeyDown;
+            GV_HideStoryFrom.OptionsBehavior.Editable = false;
+            GV_HideStoryFrom.OptionsBehavior.ReadOnly = true;
             // 
             // XTP_PendingFollowRequests
             // 
@@ -387,6 +399,8 @@
             GV_PendingFollowRequests.Name = "GV_PendingFollowRequests";
             GV_PendingFollowRequests.DoubleClick += GV_DoubleClick;
             GV_PendingFollowRequests.KeyDown += GV_KeyDown;
+            GV_PendingFollowRequests.OptionsBehavior.Editable = false;
+            GV_PendingFollowRequests.OptionsBehavior.ReadOnly = true;
             // 
             // XTP_RecentFollowRequests
             // 
@@ -411,6 +425,8 @@
             GV_RecentFollowRequests.Name = "GV_RecentFollowRequests";
             GV_RecentFollowRequests.DoubleClick += GV_DoubleClick;
             GV_RecentFollowRequests.KeyDown += GV_KeyDown;
+            GV_RecentFollowRequests.OptionsBehavior.Editable = false;
+            GV_RecentFollowRequests.OptionsBehavior.ReadOnly = true;
             // 
             // XTP_RemovedSuggestions
             // 
@@ -435,6 +451,8 @@
             GV_RemovedSuggestions.Name = "GV_RemovedSuggestions";
             GV_RemovedSuggestions.DoubleClick += GV_DoubleClick;
             GV_RemovedSuggestions.KeyDown += GV_KeyDown;
+            GV_RemovedSuggestions.OptionsBehavior.Editable = false;
+            GV_RemovedSuggestions.OptionsBehavior.ReadOnly = true;
             // 
             // XTP_BlockedProfiles
             // 
@@ -459,6 +477,8 @@
             GV_Blocked.Name = "GV_Blocked";
             GV_Blocked.DoubleClick += GV_DoubleClick;
             GV_Blocked.KeyDown += GV_KeyDown;
+            GV_Blocked.OptionsBehavior.Editable = false;
+            GV_Blocked.OptionsBehavior.ReadOnly = true;
             // 
             // InstagramAnalyzerForm
             // 
