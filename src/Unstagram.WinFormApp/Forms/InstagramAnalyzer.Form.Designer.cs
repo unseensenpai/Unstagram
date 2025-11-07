@@ -162,7 +162,7 @@
             RG_ContentTypeSelector.Location = new System.Drawing.Point(8, 3);
             RG_ContentTypeSelector.Name = "RG_ContentTypeSelector";
             RG_ContentTypeSelector.Properties.Columns = 2;
-            RG_ContentTypeSelector.Properties.Items.AddRange(new DevExpress.XtraEditors.Controls.RadioGroupItem[] { new DevExpress.XtraEditors.Controls.RadioGroupItem(null, "Json", true, null, "RGI_Json"), new DevExpress.XtraEditors.Controls.RadioGroupItem(null, "Html", true, null, "RGI_Html") });
+            RG_ContentTypeSelector.Properties.Items.AddRange(new DevExpress.XtraEditors.Controls.RadioGroupItem[] { new DevExpress.XtraEditors.Controls.RadioGroupItem(null, "Json", true, null, "RGI_Json"), new DevExpress.XtraEditors.Controls.RadioGroupItem(null, "Html", false, null, "RGI_Html") });
             RG_ContentTypeSelector.Size = new System.Drawing.Size(139, 28);
             RG_ContentTypeSelector.TabIndex = 0;
             RG_ContentTypeSelector.SelectedIndexChanged += RG_ContentTypeSelector_SelectedIndexChanged;
@@ -241,10 +241,11 @@
             // 
             GV_Followers.GridControl = GC_Followers;
             GV_Followers.Name = "GV_Followers";
-            GV_Followers.DoubleClick += GV_DoubleClick;
-            GV_Followers.KeyDown += GV_KeyDown;
             GV_Followers.OptionsBehavior.Editable = false;
             GV_Followers.OptionsBehavior.ReadOnly = true;
+            GV_Followers.OptionsView.ShowFooter = true;
+            GV_Followers.KeyDown += GV_KeyDown;
+            GV_Followers.DoubleClick += GV_DoubleClick;
             // 
             // XTP_Following
             // 
@@ -267,10 +268,11 @@
             // 
             GV_Following.GridControl = GC_Following;
             GV_Following.Name = "GV_Following";
-            GV_Following.DoubleClick += GV_DoubleClick;
-            GV_Following.KeyDown += GV_KeyDown;
             GV_Following.OptionsBehavior.Editable = false;
             GV_Following.OptionsBehavior.ReadOnly = true;
+            GV_Following.OptionsView.ShowFooter = true;
+            GV_Following.KeyDown += GV_KeyDown;
+            GV_Following.DoubleClick += GV_DoubleClick;
             // 
             // XTP_RecentlyUnfollowed
             // 
@@ -293,10 +295,11 @@
             // 
             GV_RecentlyUnfollowed.GridControl = GC_RecentlyUnfollowed;
             GV_RecentlyUnfollowed.Name = "GV_RecentlyUnfollowed";
-            GV_RecentlyUnfollowed.DoubleClick += GV_DoubleClick;
-            GV_RecentlyUnfollowed.KeyDown += GV_KeyDown;
             GV_RecentlyUnfollowed.OptionsBehavior.Editable = false;
             GV_RecentlyUnfollowed.OptionsBehavior.ReadOnly = true;
+            GV_RecentlyUnfollowed.OptionsView.ShowFooter = true;
+            GV_RecentlyUnfollowed.KeyDown += GV_KeyDown;
+            GV_RecentlyUnfollowed.DoubleClick += GV_DoubleClick;
             // 
             // XTP_FollowRequestYouHaveReceived
             // 
@@ -319,10 +322,11 @@
             // 
             GV_FollowRequestsYouHaveRecieved.GridControl = GC_FollowRequestsYouHaveRecieved;
             GV_FollowRequestsYouHaveRecieved.Name = "GV_FollowRequestsYouHaveRecieved";
-            GV_FollowRequestsYouHaveRecieved.DoubleClick += GV_DoubleClick;
-            GV_FollowRequestsYouHaveRecieved.KeyDown += GV_KeyDown;
             GV_FollowRequestsYouHaveRecieved.OptionsBehavior.Editable = false;
             GV_FollowRequestsYouHaveRecieved.OptionsBehavior.ReadOnly = true;
+            GV_FollowRequestsYouHaveRecieved.OptionsView.ShowFooter = true;
+            GV_FollowRequestsYouHaveRecieved.KeyDown += GV_KeyDown;
+            GV_FollowRequestsYouHaveRecieved.DoubleClick += GV_DoubleClick;
             // 
             // XTP_CloseFriends
             // 
@@ -345,10 +349,11 @@
             // 
             GV_CloseFriends.GridControl = GC_CloseFriends;
             GV_CloseFriends.Name = "GV_CloseFriends";
-            GV_CloseFriends.DoubleClick += GV_DoubleClick;
-            GV_CloseFriends.KeyDown += GV_KeyDown;
             GV_CloseFriends.OptionsBehavior.Editable = false;
             GV_CloseFriends.OptionsBehavior.ReadOnly = true;
+            GV_CloseFriends.OptionsView.ShowFooter = true;
+            GV_CloseFriends.KeyDown += GV_KeyDown;
+            GV_CloseFriends.DoubleClick += GV_DoubleClick;
             // 
             // XTP_HideStoryFrom
             // 
@@ -371,10 +376,11 @@
             // 
             GV_HideStoryFrom.GridControl = GC_HideStoryFrom;
             GV_HideStoryFrom.Name = "GV_HideStoryFrom";
-            GV_HideStoryFrom.DoubleClick += GV_DoubleClick;
-            GV_HideStoryFrom.KeyDown += GV_KeyDown;
             GV_HideStoryFrom.OptionsBehavior.Editable = false;
             GV_HideStoryFrom.OptionsBehavior.ReadOnly = true;
+            GV_HideStoryFrom.OptionsView.ShowFooter = true;
+            GV_HideStoryFrom.KeyDown += GV_KeyDown;
+            GV_HideStoryFrom.DoubleClick += GV_DoubleClick;
             // 
             // XTP_PendingFollowRequests
             // 
@@ -397,10 +403,11 @@
             // 
             GV_PendingFollowRequests.GridControl = GC_PendingFollowRequests;
             GV_PendingFollowRequests.Name = "GV_PendingFollowRequests";
-            GV_PendingFollowRequests.DoubleClick += GV_DoubleClick;
-            GV_PendingFollowRequests.KeyDown += GV_KeyDown;
             GV_PendingFollowRequests.OptionsBehavior.Editable = false;
             GV_PendingFollowRequests.OptionsBehavior.ReadOnly = true;
+            GV_PendingFollowRequests.OptionsView.ShowFooter = true;
+            GV_PendingFollowRequests.KeyDown += GV_KeyDown;
+            GV_PendingFollowRequests.DoubleClick += GV_DoubleClick;
             // 
             // XTP_RecentFollowRequests
             // 
@@ -423,10 +430,11 @@
             // 
             GV_RecentFollowRequests.GridControl = GC_RecentFollowRequests;
             GV_RecentFollowRequests.Name = "GV_RecentFollowRequests";
-            GV_RecentFollowRequests.DoubleClick += GV_DoubleClick;
-            GV_RecentFollowRequests.KeyDown += GV_KeyDown;
             GV_RecentFollowRequests.OptionsBehavior.Editable = false;
             GV_RecentFollowRequests.OptionsBehavior.ReadOnly = true;
+            GV_RecentFollowRequests.OptionsView.ShowFooter = true;
+            GV_RecentFollowRequests.KeyDown += GV_KeyDown;
+            GV_RecentFollowRequests.DoubleClick += GV_DoubleClick;
             // 
             // XTP_RemovedSuggestions
             // 
@@ -449,10 +457,11 @@
             // 
             GV_RemovedSuggestions.GridControl = GC_RemovedSuggestions;
             GV_RemovedSuggestions.Name = "GV_RemovedSuggestions";
-            GV_RemovedSuggestions.DoubleClick += GV_DoubleClick;
-            GV_RemovedSuggestions.KeyDown += GV_KeyDown;
             GV_RemovedSuggestions.OptionsBehavior.Editable = false;
             GV_RemovedSuggestions.OptionsBehavior.ReadOnly = true;
+            GV_RemovedSuggestions.OptionsView.ShowFooter = true;
+            GV_RemovedSuggestions.KeyDown += GV_KeyDown;
+            GV_RemovedSuggestions.DoubleClick += GV_DoubleClick;
             // 
             // XTP_BlockedProfiles
             // 
@@ -475,10 +484,11 @@
             // 
             GV_Blocked.GridControl = GC_Blocked;
             GV_Blocked.Name = "GV_Blocked";
-            GV_Blocked.DoubleClick += GV_DoubleClick;
-            GV_Blocked.KeyDown += GV_KeyDown;
             GV_Blocked.OptionsBehavior.Editable = false;
             GV_Blocked.OptionsBehavior.ReadOnly = true;
+            GV_Blocked.OptionsView.ShowFooter = true;
+            GV_Blocked.KeyDown += GV_KeyDown;
+            GV_Blocked.DoubleClick += GV_DoubleClick;
             // 
             // InstagramAnalyzerForm
             // 
