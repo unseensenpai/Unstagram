@@ -1,11 +1,14 @@
 ﻿using DevExpress.XtraGrid;
 using DevExpress.XtraGrid.Views.Grid;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Unstagram.WinFormApp.Models.Enums;
 using Unstagram.WinFormApp.Models.InstagramModels;
@@ -14,8 +17,8 @@ namespace Unstagram.WinFormApp.Forms
 {
     public partial class InstagramAnalyzerForm : DevExpress.XtraEditors.XtraForm
     {
-        private System.Collections.Generic.List<StringListData> _followers = new();
-        private System.Collections.Generic.List<StringListData> _following = new();
+        private List<StringListData> _followers = [];
+        private List<StringListData> _following = [];
 
         private DevExpress.XtraTab.XtraTabPage XTP_TheyFollowIDont, XTP_IFollowTheyDont;
         private GridControl GC_TheyFollowIDont, GC_IFollowTheyDont;
@@ -65,10 +68,10 @@ namespace Unstagram.WinFormApp.Forms
             try
             {
                 int sel = RG_ContentTypeSelector.SelectedIndex;
+                // Keep JSON/HTML default but explicitly expose ZIP so user can pick archives
                 ofd.Filter = sel == 1
-                    ? "HTML files (*.html;*.htm)|*.html;*.htm|All files (*.*)|*.*"
-                    : "JSON files (*.json)|*.json|All files (*.*)|*.*";
-
+                    ? "Supported files (*.html;*.htm;*.zip)|*.html;*.htm;*.zip|HTML files (*.html;*.htm)|*.html;*.htm|Zip files (*.zip)|*.zip|All files (*.*)|*.*"
+                    : "Supported files (*.json;*.zip)|*.json;*.zip|JSON files (*.json)|*.json|Zip files (*.zip)|*.zip|All files (*.*)|*.*";
             }
             catch
             {
@@ -87,6 +90,14 @@ namespace Unstagram.WinFormApp.Forms
             {
                 try
                 {
+                    var ext = Path.GetExtension(filePath).ToLowerInvariant();
+                    if (ext == ".zip")
+                    {
+                        // Process archive entries and load any known files inside
+                        ProcessZipFile(filePath);
+                        continue;
+                    }
+
                     var lowerName = Path.GetFileName(filePath).ToLowerInvariant();
                     // determine content type from radio
                     var contentType = AnalyzeFileType.Json;
@@ -105,8 +116,120 @@ namespace Unstagram.WinFormApp.Forms
                 {
                     // Keep overall load going; surface minimal feedback
                     System.Diagnostics.Debug.WriteLine($"Failed to load {filePath}: {ex}");
-                    // optional: show message box for user
-                    // MessageBox.Show(this, $"Failed to load {filePath}: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+        }
+
+        private AnalyzeFileType DetectContentTypeForPath(string path, AnalyzeFileType radioDefault)
+        {
+            var ext = Path.GetExtension(path).ToLowerInvariant();
+            return ext switch
+            {
+                ".html" or ".htm" => AnalyzeFileType.Html,
+                ".json" => AnalyzeFileType.Json,
+                _ => radioDefault
+            };
+        }
+
+        private void ProcessZipFile(string zipPath)
+        {
+            try
+            {
+                using var za = ZipFile.OpenRead(zipPath);
+                ProcessZipArchive(za, Path.GetFileName(zipPath), 0);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Zip processing failed for {zipPath}: {ex}");
+            }
+        }
+
+        private void ProcessZipArchive(ZipArchive za, string archiveDisplayName, int depth)
+        {
+            const int MaxDepth = 3;
+            const long MaxEntrySize = 150L * 1024 * 1024; // 150 MB
+            const int MaxEntriesPerArchive = 5000;
+
+            if (depth > MaxDepth) return;
+
+            int processedEntries = 0;
+
+            foreach (var entry in za.Entries)
+            {
+                if (++processedEntries > MaxEntriesPerArchive) break;
+
+                // skip directory entries
+                if (string.IsNullOrEmpty(entry.Name)) continue;
+
+                // Prevent ZipSlip-like paths
+                var normalized = entry.FullName.Replace('\\', '/');
+                if (normalized.Contains("..")) continue;
+
+                var entryFileNameLower = Path.GetFileName(entry.Name).ToLowerInvariant();
+                var entryFullLower = normalized.ToLowerInvariant();
+
+                // If entry is itself a zip -> recurse
+                var entryExt = Path.GetExtension(entry.Name).ToLowerInvariant();
+                try
+                {
+                    if (entryExt == ".zip")
+                    {
+                        try
+                        {
+                            using var entryStream = entry.Open();
+                            using var ms = new MemoryStream();
+                            entryStream.CopyTo(ms);
+                            ms.Position = 0;
+
+                            using var nested = new ZipArchive(ms, ZipArchiveMode.Read, leaveOpen: false);
+                            ProcessZipArchive(nested, entry.FullName, depth + 1);
+                        }
+                        catch (InvalidDataException)
+                        {
+                            // Not a valid zip or encrypted; skip
+                            continue;
+                        }
+                        catch (Exception exNested)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Failed to process nested zip {entry.FullName}: {exNested}");
+                            continue;
+                        }
+
+                        continue;
+                    }
+
+                    // Try to map to a grid (filename or full path)
+                    var mapping = GetTargetGridByFileName(entryFileNameLower) ?? GetTargetGridByFileName(entryFullLower);
+                    if (mapping == null) continue;
+
+                    // Safety: avoid huge entries
+                    if (entry.Length > MaxEntrySize) continue;
+
+                    using var s = entry.Open();
+                    using var sr = new StreamReader(s);
+                    var content = sr.ReadToEnd();
+                    if (string.IsNullOrWhiteSpace(content)) continue;
+
+                    var contentType = DetectContentTypeForPath(entry.Name, AnalyzeFileType.Json);
+
+                    // reuse existing loader via temp file (or refactor ManuelLoadFileIntoGrid to accept string/stream)
+                    var extForTemp = Path.GetExtension(entry.Name);
+                    if (string.IsNullOrEmpty(extForTemp)) extForTemp = contentType == AnalyzeFileType.Html ? ".html" : ".json";
+                    var temp = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + extForTemp);
+                    File.WriteAllText(temp, content);
+
+                    try
+                    {
+                        ManuelLoadFileIntoGrid(temp, mapping.Grid, mapping.TabPage, contentType);
+                    }
+                    finally
+                    {
+                        try { File.Delete(temp); } catch { /* ignore */ }
+                    }
+                }
+                catch (Exception exEntry)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Failed to process zip entry {entry.FullName} in {archiveDisplayName}: {exEntry}");
                 }
             }
         }
@@ -204,220 +327,39 @@ namespace Unstagram.WinFormApp.Forms
 
         private GridMapping GetTargetGridByFileName(string lowerFileName)
         {
-            // Map well-known instagram export file name fragments to tab/grid
-            if (lowerFileName.Contains("followers")) return new GridMapping(XTP_Followers, GC_Followers, GV_Followers);
-            if (lowerFileName.Contains("following")) return new GridMapping(XTP_Following, GC_Following, GV_Following);
-            if (lowerFileName.Contains("recently_unfollowed") || lowerFileName.Contains("recently_unfollowed_profiles")) return new GridMapping(XTP_RecentlyUnfollowed, GC_RecentlyUnfollowed, GV_RecentlyUnfollowed);
-            if (lowerFileName.Contains("follow_requests_you") || lowerFileName.Contains("follow_requests") && lowerFileName.Contains("received")) return new GridMapping(XTP_FollowRequestYouHaveReceived, GC_FollowRequestsYouHaveRecieved, GV_FollowRequestsYouHaveRecieved);
-            if (lowerFileName.Contains("close_friends")) return new GridMapping(XTP_CloseFriends, GC_CloseFriends, GV_CloseFriends);
-            if (lowerFileName.Contains("hide_story_from") || lowerFileName.Contains("hide_story")) return new GridMapping(XTP_HideStoryFrom, GC_HideStoryFrom, GV_HideStoryFrom);
-            if (lowerFileName.Contains("pending_follow_requests") || (lowerFileName.Contains("pending") && lowerFileName.Contains("follow"))) return new GridMapping(XTP_PendingFollowRequests, GC_PendingFollowRequests, GV_PendingFollowRequests);
-            if (lowerFileName.Contains("recent_follow_requests")) return new GridMapping(XTP_RecentFollowRequests, GC_RecentFollowRequests, GV_RecentFollowRequests);
-            if (lowerFileName.Contains("removed_suggestions")) return new GridMapping(XTP_RemovedSuggestions, GC_RemovedSuggestions, GV_RemovedSuggestions);
-            if (lowerFileName.Contains("blocked_profiles") || lowerFileName.Contains("blocked")) return new GridMapping(XTP_BlockedProfiles, GC_Blocked, GV_Blocked);
+            if (string.IsNullOrWhiteSpace(lowerFileName)) return null;
 
-            // fallback: try to match common fragments
-            if (lowerFileName.Contains("blocked")) return new GridMapping(XTP_BlockedProfiles, GC_Blocked, GV_Blocked);
+            // Normalize: convert any non-word char to underscore, collapse multiples, trim edges.
+            var normalized = GetNonWordRegex().Replace(lowerFileName, "_");
+            normalized = GetUnderscoreRegex().Replace(normalized, "_").Trim('_');
+
+            // Build token set for robust matching (handles "followers_1", "you've", etc.)
+            var tokens = normalized.Split('_').Where(t => !string.IsNullOrWhiteSpace(t))
+                                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            bool Has(params string[] parts) => parts.All(p => tokens.Contains(p));
+
+            // Map well-known instagram export fragments to tab/grid
+            if (tokens.Contains("followers")) return new GridMapping(XTP_Followers, GC_Followers, GV_Followers);
+            if (tokens.Contains("following")) return new GridMapping(XTP_Following, GC_Following, GV_Following);
+            if (Has("recently", "unfollowed") || normalized.Contains("recentlyunfollowed")) return new GridMapping(XTP_RecentlyUnfollowed, GC_RecentlyUnfollowed, GV_RecentlyUnfollowed);
+
+            // follow requests you've received -> tokens like ["follow","requests","youve","received"]
+            if (Has("follow", "requests", "received") || normalized.Contains("follow_requests_you")) return new GridMapping(XTP_FollowRequestYouHaveReceived, GC_FollowRequestsYouHaveRecieved, GV_FollowRequestsYouHaveRecieved);
+
+            if (Has("close", "friends")) return new GridMapping(XTP_CloseFriends, GC_CloseFriends, GV_CloseFriends);
+            if (Has("hide", "story", "from") || Has("hide", "story")) return new GridMapping(XTP_HideStoryFrom, GC_HideStoryFrom, GV_HideStoryFrom);
+            if (Has("pending", "follow", "requests") || Has("pending", "follow")) return new GridMapping(XTP_PendingFollowRequests, GC_PendingFollowRequests, GV_PendingFollowRequests);
+            if (Has("recent", "follow", "requests") || normalized.Contains("recent_follow_requests")) return new GridMapping(XTP_RecentFollowRequests, GC_RecentFollowRequests, GV_RecentFollowRequests);
+            if (Has("removed", "suggestions")) return new GridMapping(XTP_RemovedSuggestions, GC_RemovedSuggestions, GV_RemovedSuggestions);
+            if (tokens.Contains("blocked") || tokens.Contains("blocked_profiles")) return new GridMapping(XTP_BlockedProfiles, GC_Blocked, GV_Blocked);
+
+            // Final fallbacks (substring on normalized) to catch odd cases
+            if (normalized.Contains("blocked")) return new GridMapping(XTP_BlockedProfiles, GC_Blocked, GV_Blocked);
+            if (normalized.Contains("followers")) return new GridMapping(XTP_Followers, GC_Followers, GV_Followers);
+            if (normalized.Contains("following")) return new GridMapping(XTP_Following, GC_Following, GV_Following);
 
             return null;
-        }
-
-        private void LoadFileIntoGrid(string filePath, GridControl grid, DevExpress.XtraTab.XtraTabPage tab, AnalyzeFileType contentType)
-        {
-            if (grid == null || tab == null) return;
-
-            string content = File.ReadAllText(filePath);
-            if (string.IsNullOrWhiteSpace(content)) return;
-
-            object dataSource = null;
-
-            if (contentType == AnalyzeFileType.Html)
-            {
-                var dt = new System.Data.DataTable();
-                dt.Columns.Add("Html", typeof(string));
-                dt.Rows.Add(content);
-                dataSource = dt;
-            }
-            else
-            {
-                var opts = new System.Text.Json.JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    AllowTrailingCommas = true
-                };
-                opts.Converters.Add(new Unstagram.WinFormApp.Core.Converters.UnixEpochSecondsDateTimeConverter());
-
-                try
-                {
-                    // Followers
-                    if (grid.Name == GC_Followers.Name)
-                    {
-                        var list = System.Text.Json.JsonSerializer.Deserialize<
-                            System.Collections.Generic.List<FollowerProfile>>(content, opts);
-
-                        var flat = list?
-                            .SelectMany(p =>
-                            {
-                                var items = p.StringListData ?? new System.Collections.Generic.List<StringListData>();
-                                if (items.Count == 0)
-                                {
-                                    items = new()
-                                    {
-                                new StringListData
-                                {
-                                    Value = p.Title,
-                                    Href = GuessHrefFromUsername(p.Title),
-                                    Timestamp = default
-                                }
-                                    };
-                                }
-                                else
-                                {
-                                    foreach (var s in items)
-                                    {
-                                        if (string.IsNullOrWhiteSpace(s.Value)) s.Value = p.Title;
-                                        if (string.IsNullOrWhiteSpace(s.Href) && !string.IsNullOrWhiteSpace(p.Title))
-                                            s.Href = GuessHrefFromUsername(p.Title);
-                                    }
-                                }
-                                return items;
-                            })
-                            .ToList() ?? new();
-
-                        _followers = flat;
-                        dataSource = flat;
-                        EnsureDiffTabsCreated();
-                        UpdateDiffTabs();
-                    }
-                    // Following
-                    else if (grid.Name == GC_Following.Name)
-                    {
-                        var list = System.Text.Json.JsonSerializer.Deserialize<
-                            System.Collections.Generic.List<FollowingProfile>>(content, opts);
-
-                        var flat = list?
-                            .SelectMany(p =>
-                            {
-                                var items = p.StringListData ?? new System.Collections.Generic.List<StringListData>();
-                                if (items.Count == 0)
-                                {
-                                    items = new()
-                                    {
-                                new StringListData
-                                {
-                                    Value = p.Title,
-                                    Href = GuessHrefFromUsername(p.Title),
-                                    Timestamp = default
-                                }
-                                    };
-                                }
-                                else
-                                {
-                                    foreach (var s in items)
-                                    {
-                                        if (string.IsNullOrWhiteSpace(s.Value)) s.Value = p.Title;
-                                        if (string.IsNullOrWhiteSpace(s.Href) && !string.IsNullOrWhiteSpace(p.Title))
-                                            s.Href = GuessHrefFromUsername(p.Title);
-                                    }
-                                }
-                                return items;
-                            })
-                            .ToList() ?? new();
-
-                        _following = flat;
-                        dataSource = flat;
-                        EnsureDiffTabsCreated();
-                        UpdateDiffTabs();
-                    }
-                    // Blocked -> Value from Title if missing
-                    else if (grid.Name == GC_Blocked.Name)
-                    {
-                        var wrapper = System.Text.Json.JsonSerializer.Deserialize<
-                            BlockedProfilesResponse>(content, opts);
-
-                        var blocked = wrapper?.RelationshipsBlockedUsers
-                            ?? System.Text.Json.JsonSerializer.Deserialize<
-                                System.Collections.Generic.List<BlockedProfile>>(content, opts);
-
-                        var flat = blocked?
-                            .SelectMany(p =>
-                            {
-                                var items = p.StringListData ?? new System.Collections.Generic.List<StringListData>();
-                                if (items.Count == 0)
-                                {
-                                    items = new()
-                                    {
-                                new StringListData
-                                {
-                                    Value = p.Title,
-                                    Href = GuessHrefFromUsername(p.Title),
-                                    Timestamp = default
-                                }
-                                    };
-                                }
-                                else
-                                {
-                                    foreach (var s in items)
-                                    {
-                                        if (string.IsNullOrWhiteSpace(s.Value)) s.Value = p.Title;
-                                        if (string.IsNullOrWhiteSpace(s.Href) && !string.IsNullOrWhiteSpace(p.Title))
-                                            s.Href = GuessHrefFromUsername(p.Title);
-                                    }
-                                }
-                                return items;
-                            })
-                            .ToList() ?? new();
-
-                        dataSource = flat;
-                    }
-                    // Generic lists that are already List<StringListData> or wrapped
-                    else
-                    {
-                        var direct = System.Text.Json.JsonSerializer.Deserialize<
-                            System.Collections.Generic.List<StringListData>>(content, opts);
-                        if (direct != null)
-                        {
-                            dataSource = direct;
-                        }
-                        else
-                        {
-                            using var doc = System.Text.Json.JsonDocument.Parse(content);
-                            var root = doc.RootElement;
-                            if (root.ValueKind == System.Text.Json.JsonValueKind.Object)
-                            {
-                                var arrProp = root.EnumerateObject().FirstOrDefault(p => p.Value.ValueKind == System.Text.Json.JsonValueKind.Array);
-                                if (arrProp.Value.ValueKind == System.Text.Json.JsonValueKind.Array)
-                                {
-                                    var inner = arrProp.Value.GetRawText();
-                                    var innerList = System.Text.Json.JsonSerializer.Deserialize<
-                                        System.Collections.Generic.List<StringListData>>(inner, opts);
-                                    dataSource = innerList;
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Deserialize failed for {filePath}: {ex.Message}");
-                }
-            }
-
-            // Fallback to raw if nothing parsed
-            if (dataSource == null)
-            {
-                var dt = new System.Data.DataTable();
-                dt.Columns.Add("Raw", typeof(string));
-                dt.Rows.Add(content);
-                dataSource = dt;
-            }
-
-            grid.DataSource = dataSource;
-            grid.Refresh();
-
-            grid.Enabled = true;
-            MarkGridLoadState(grid, true);
-            MarkTabHeaderLoaded(tab, true);
         }
 
         private void ManuelLoadFileIntoGrid(string filePath, GridControl grid, DevExpress.XtraTab.XtraTabPage tab, AnalyzeFileType contentType)
@@ -431,7 +373,7 @@ namespace Unstagram.WinFormApp.Forms
 
             if (contentType == AnalyzeFileType.Html)
             {
-                var dt = new System.Data.DataTable();
+                var dt = new DataTable();
                 dt.Columns.Add("Html", typeof(string));
                 dt.Rows.Add(content);
                 dataSource = dt;
@@ -538,6 +480,7 @@ namespace Unstagram.WinFormApp.Forms
 
             grid.DataSource = dataSource;
             grid.Refresh();
+            ApplyFooterCount(grid);
 
             grid.Enabled = true;
             MarkGridLoadState(grid, true);
@@ -545,12 +488,12 @@ namespace Unstagram.WinFormApp.Forms
         }
 
         // Robust extractor for your JSON shapes -> List<StringListData>
-        private System.Collections.Generic.List<StringListData> ExtractStringListData(
+        private List<StringListData> ExtractStringListData(
             string json,
             string arrayPropName,
             bool rootIsArray)
         {
-            var results = new System.Collections.Generic.List<StringListData>();
+            var results = new List<StringListData>();
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
@@ -866,6 +809,7 @@ namespace Unstagram.WinFormApp.Forms
                 GV_TheyFollowIDont.KeyDown += GV_KeyDown;
                 GV_TheyFollowIDont.OptionsBehavior.Editable = false;
                 GV_TheyFollowIDont.OptionsBehavior.ReadOnly = true;
+                GV_TheyFollowIDont.OptionsView.ShowFooter = true;
                 XTP_TheyFollowIDont.Controls.Add(GC_TheyFollowIDont);
                 XTC_Analyzes.TabPages.Insert(0, XTP_TheyFollowIDont);
                 MarkGridLoadState(GC_TheyFollowIDont, false);
@@ -882,12 +826,57 @@ namespace Unstagram.WinFormApp.Forms
                 GV_IFollowTheyDont.KeyDown += GV_KeyDown;
                 GV_IFollowTheyDont.OptionsBehavior.Editable = false;
                 GV_IFollowTheyDont.OptionsBehavior.ReadOnly = true;
+                GV_IFollowTheyDont.OptionsView.ShowFooter = true;
                 XTP_IFollowTheyDont.Controls.Add(GC_IFollowTheyDont);
                 XTC_Analyzes.TabPages.Insert(1, XTP_IFollowTheyDont);
                 MarkGridLoadState(GC_IFollowTheyDont, false);
                 MarkTabHeaderLoaded(XTP_IFollowTheyDont, false);
             }
         }
+
+        private void ApplyFooterCount(GridControl grid, string preferredField = null)
+        {
+            if (grid?.MainView is not GridView gv) return;
+
+            // Ensure footer visible
+            gv.OptionsView.ShowFooter = true;
+
+            // Prefer supplied field; otherwise try common names
+            var candidates = new List<string>();
+            if (!string.IsNullOrWhiteSpace(preferredField)) candidates.Add(preferredField);
+            candidates.AddRange(new[] { "Value", "Href" });
+
+            // Find a matching column (FieldName or Name) or fallback to first visible column
+            var cols = gv.Columns.OfType<DevExpress.XtraGrid.Columns.GridColumn>().Where(c => c.Visible).ToList();
+            DevExpress.XtraGrid.Columns.GridColumn target = null;
+
+            foreach (var c in cols)
+            {
+                if (candidates.Any(p => string.Equals(c.FieldName, p, StringComparison.OrdinalIgnoreCase) || string.Equals(c.Name, p, StringComparison.OrdinalIgnoreCase)))
+                {
+                    target = c;
+                    break;
+                }
+            }
+
+            if (target == null)
+                target = cols.FirstOrDefault();
+
+            if (target == null) return;
+
+            // Clear existing summaries for that column and add a Count summary
+            try
+            {
+                target.Summary.Clear();
+                target.Summary.Add(DevExpress.Data.SummaryItemType.Count, target.FieldName ?? target.Name, "Count: {0:n0}");
+
+            }
+            catch
+            {
+                // ignore summary failures for unusual column setups
+            }
+        }
+
         private static string GuessHrefFromUsername(string username)
             => string.IsNullOrWhiteSpace(username) ? null : $"https://www.instagram.com/{username.TrimEnd('/')}/";
 
@@ -923,15 +912,22 @@ namespace Unstagram.WinFormApp.Forms
 
             GC_TheyFollowIDont.DataSource = theyFollowIDont;
             GC_TheyFollowIDont.Refresh();
+            ApplyFooterCount(GC_TheyFollowIDont);
             MarkGridLoadState(GC_TheyFollowIDont, theyFollowIDont.Count > 0);
             MarkTabHeaderLoaded(XTP_TheyFollowIDont, theyFollowIDont.Count > 0);
 
             GC_IFollowTheyDont.DataSource = iFollowTheyDont;
             GC_IFollowTheyDont.Refresh();
+            ApplyFooterCount(GC_IFollowTheyDont);
             MarkGridLoadState(GC_IFollowTheyDont, iFollowTheyDont.Count > 0);
             MarkTabHeaderLoaded(XTP_IFollowTheyDont, iFollowTheyDont.Count > 0);
         }
 
 
+        [GeneratedRegex(@"[^\w]")]
+        private static partial Regex GetNonWordRegex();
+
+        [GeneratedRegex(@"_+")]
+        private static partial Regex GetUnderscoreRegex();
     }
 }

@@ -28,14 +28,15 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ContainerForm));
             ribbon = new DevExpress.XtraBars.Ribbon.RibbonControl();
             BBI_OpenInstagramAnalyzer = new DevExpress.XtraBars.BarButtonItem();
             skinPaletteRibbonGalleryBarItem1 = new DevExpress.XtraBars.SkinPaletteRibbonGalleryBarItem();
+            skinPaletteDropDownButtonItem1 = new DevExpress.XtraBars.SkinPaletteDropDownButtonItem();
             RPG_MainMenu = new DevExpress.XtraBars.Ribbon.RibbonPage();
             RPG_MainSubForms = new DevExpress.XtraBars.Ribbon.RibbonPageGroup();
             ribbonStatusBar = new DevExpress.XtraBars.Ribbon.RibbonStatusBar();
-            skinPaletteDropDownButtonItem1 = new DevExpress.XtraBars.SkinPaletteDropDownButtonItem();
             ((System.ComponentModel.ISupportInitialize)ribbon).BeginInit();
             SuspendLayout();
             // 
@@ -66,6 +67,13 @@
             skinPaletteRibbonGalleryBarItem1.Id = 2;
             skinPaletteRibbonGalleryBarItem1.Name = "skinPaletteRibbonGalleryBarItem1";
             // 
+            // skinPaletteDropDownButtonItem1
+            // 
+            skinPaletteDropDownButtonItem1.ActAsDropDown = true;
+            skinPaletteDropDownButtonItem1.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
+            skinPaletteDropDownButtonItem1.Id = 3;
+            skinPaletteDropDownButtonItem1.Name = "skinPaletteDropDownButtonItem1";
+            // 
             // RPG_MainMenu
             // 
             RPG_MainMenu.Groups.AddRange(new DevExpress.XtraBars.Ribbon.RibbonPageGroup[] { RPG_MainSubForms });
@@ -85,13 +93,6 @@
             ribbonStatusBar.Ribbon = ribbon;
             ribbonStatusBar.Size = new System.Drawing.Size(1278, 24);
             // 
-            // skinPaletteDropDownButtonItem1
-            // 
-            skinPaletteDropDownButtonItem1.ActAsDropDown = true;
-            skinPaletteDropDownButtonItem1.ButtonStyle = DevExpress.XtraBars.BarButtonStyle.DropDown;
-            skinPaletteDropDownButtonItem1.Id = 3;
-            skinPaletteDropDownButtonItem1.Name = "skinPaletteDropDownButtonItem1";
-            // 
             // ContainerForm
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -99,6 +100,7 @@
             ClientSize = new System.Drawing.Size(1278, 719);
             Controls.Add(ribbonStatusBar);
             Controls.Add(ribbon);
+            IconOptions.Image = (System.Drawing.Image)resources.GetObject("ContainerForm.IconOptions.Image");
             IsMdiContainer = true;
             Name = "ContainerForm";
             Ribbon = ribbon;
